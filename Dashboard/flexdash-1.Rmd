@@ -1,0 +1,218 @@
+---
+title: "Flexdash"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: 
+      version: 4
+      bg: "#101010"
+      fg: "black" 
+      primary: "#ED79F9"
+      navbar-bg: "#3ADAC6"
+      font: "Lato"
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(ggplot2)
+library(DT)
+starwars = starwars
+penguins = palmerpenguins::penguins
+library(shinydashboard)
+library(shiny)
+
+library(ggtext)
+```
+
+
+Project Details
+=========================================
+
+#### Header
+In placerat ipsum mi, et mattis sem consectetur id. 
+Phasellus faucibus condimentum augue, eu placerat sapien aliquet in.
+Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. 
+Fusce pellentesque purus porta, tincidunt quam et, consequat tortor.
+Cras in finibus neque, at aliquam nisi. 
+Quisque consectetur viverra quam, eget tristique risus pretium nec. Aliquam iaculis sodales malesuada. 
+
+
+> Quisque rhoncus libero mauris, nec bibendum lacus tincidunt sit amet. Nullam tempor enim a mauris suscipit consectetur. Cras et maximus elit. Curabitur hendrerit libero lobortis, rutrum metus sed, semper mi. Pellentesque a sapien nulla. Nunc erat quam, pharetra nec sodales ut, fermentum non purus. Fusce laoreet, lectus tristique accumsan convallis, nunc augue egestas dolor, non malesuada diam erat sed nisi. Proin bibendum, urna vel mollis placerat, enim dui pellentesque elit, ut pulvinar purus magna a urna.
+
+
+# Row
+----------
+### HEADER  
+
+Aliquam sed volutpat nulla. Aliquam id dui orci. Aliquam pharetra fermentum diam vitae aliquam. Duis tellus leo, malesuada condimentum libero et, luctus molestie nulla. Morbi molestie tortor sem, interdum molestie felis ornare at. In imperdiet faucibus dapibus. Phasellus interdum, lectus a pretium sagittis, sapien sem auctor odio, eu efficitur augue elit rutrum nisl. Ut ut posuere urna. Donec sit amet diam eget ex lacinia commodo quis eu leo.
+
+### Chart 0 
+-----------------------------------------
+
+
+
+
+```{r}
+
+penguins %>% 
+  select(species, island) %>% 
+  group_by(island) %>% 
+  count(species, sort = T) %>% 
+  ggplot( aes(x= n, y= island))+
+  geom_col(fill='#42dbb7')+
+  labs(title = "Palmer Penguins Dataset",
+       subtitle = "Species of penguins by island",
+       x='Count')+
+  theme(
+    plot.title = element_markdown(face = 'bold', 
+                                  size = 15, 
+                                  color = '#33b093'),
+    plot.subtitle = element_markdown(size = 12),
+    axis.text.y = element_markdown(face = 'bold',
+                                   size= 12)
+  )
+
+```
+
+***
+Comments on this data plot
+
+---------
+
+
+
+
+Page 1 {.storyboard}
+=====================================  
+
+### Starwars Eye Colors
+
+The data is on eye color of Star Wars characters
+
+
+Aliquam sed volutpat nulla. Aliquam id dui orci. Aliquam pharetra fermentum diam vitae aliquam. Duis tellus leo, malesuada condimentum libero et, luctus molestie nulla. Morbi molestie tortor sem, interdum molestie felis ornare at. In imperdiet faucibus dapibus. Phasellus interdum, lectus a pretium sagittis, sapien sem auctor odio, eu efficitur augue elit rutrum nisl. Ut ut posuere urna. Donec sit amet diam eget ex lacinia commodo quis eu leo.
+
+
+
+
+Data Analysis  
+------------
+
+### Starwars Eye Colors!!!!!
+
+Page 2 shjdkhskdhkshdkhs
+
+
+Aliquam sed volutpat nulla. Aliquam id dui orci. Aliquam pharetra fermentum diam vitae aliquam. Duis tellus leo, malesuada condimentum libero et, luctus molestie nulla. Morbi molestie tortor sem, interdum molestie felis ornare at. In imperdiet faucibus dapibus. Phasellus interdum, lectus a pretium sagittis, sapien sem auctor odio, eu efficitur augue elit rutrum nisl. Ut ut posuere urna. Donec sit amet diam eget ex lacinia commodo quis eu leo.
+
+
+
+
+### Plot 0
+
+Duis tellus leo, malesuada condimentum libero et, luctus molestie nulla. Morbi molestie tortor sem, interdum molestie felis ornare at.
+
+
+Plot 1
+============
+***
+#### Header 89
+
+Maecenas venenatis mollis laoreet. Vivamus eu consectetur augue, eget consequat risus. Sed elementum nunc vel aliquet congue. Mauris id nulla mauris. In hac habitasse platea dictumst. Nullam ac justo non elit egestas pharetra in sit amet ex. Aenean et quam auctor, fermentum sapien sed, imperdiet sem. Donec erat nulla, congue et ante ac, tempus vestibulum enim. Proin ornare quam odio, sollicitudin tristique lectus ornare ac. Cras vulputate leo a elit lobortis sagittis. Suspendisse id lacinia lacus. Vivamus nec luctus ante, non cursus dolor.
+
+Nulla pulvinar magna ac tortor porta cursus. Integer a justo ac sem consequat pretium. Mauris eget arcu magna. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc sodales ultricies vestibulum. Integer neque leo, fermentum non leo in, eleifend consequat tellus. Etiam fringilla et erat sed volutpat. Mauris blandit posuere erat in mattis. Integer interdum nunc sit amet eros placerat ultrices. Suspendisse ac dignissim neque. Proin sit amet magna a velit luctus pulvinar.
+-------
+```{r fig.height=5, fig.width=10}
+starwars %>% 
+  select(name, eye_color, species) %>% 
+  count(eye_color, sort = T) %>% 
+  ggplot( aes(x= n, y= reorder(eye_color, n), fill=species))+
+  geom_col(fill='black')+
+  labs( title = "Starwars: Count of eye colors",
+        x="Count",
+        y="")+
+  theme(
+    plot.title = element_text(face = 'bold', size=14),
+    axis.text.y = element_text(face = 'bold', size = 12)
+  )
+
+
+
+
+
+```
+
+
+
+Ut et nisi lectus. Suspendisse pretium vitae sem quis blandit. Sed bibendum imperdiet mauris, eget viverra nunc rhoncus at. Etiam faucibus varius eros vel rutrum. Duis nisl metus, cursus a mauris id, interdum accumsan leo. Vestibulum tristique lorem elit, in feugiat nulla imperdiet ac. Duis non urna enim. Nunc facilisis sem vel arcu elementum finibus. Phasellus id pretium nisi. Donec mollis risus in elit euismod, nec facilisis enim interdum. Morbi et nisl et magna ornare aliquam ac ac sem. In iaculis dignissim porta. Curabitur finibus, tortor placerat bibendum tempor, turpis arcu ornare ex, mollis imperdiet ligula sem et velit.
+
+--------------
+
+
+
+<!-- *** -->
+<!-- comments go here -->
+
+<!-- # panel {.sidebar} -->
+Plot 2
+========
+***
+#### Header 99
+
+Maecenas venenatis mollis laoreet. Vivamus eu consectetur augue, eget consequat risus. Sed elementum nunc vel aliquet congue. Mauris id nulla mauris. In hac habitasse platea dictumst. Nullam ac justo non elit egestas pharetra in sit amet ex. Aenean et quam auctor, fermentum sapien sed, imperdiet sem. Donec erat nulla, congue et ante ac, tempus vestibulum enim. Proin ornare quam odio, sollicitudin tristique lectus ornare ac. Cras vulputate leo a elit lobortis sagittis. Suspendisse id lacinia lacus. Vivamus nec luctus ante, non cursus dolor.
+
+
+```{r fig.height=6, fig.width=11}
+starwars %>% 
+  select(species, homeworld) %>% 
+  group_by(species) %>% 
+  drop_na() %>% 
+  ggplot( aes(x= homeworld, y= species))+
+  geom_point(fill='#33b093')+
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+    axis.text.y = element_markdown(face = 'bold', size = 11)
+  )
+
+```
+
+
+
+## Header
+
+Morbi molestie tortor sem, interdum molestie felis ornare at. In imperdiet faucibus dapibus. Phasellus interdum, lectus a pretium sagittis, sapien sem auctor odio, eu efficitur augue elit rutrum nisl. Ut ut posuere urna. Donec sit amet diam eget ex lacinia commodo quis eu leo.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- luctus molestie nulla. Morbi molestie tortor sem, interdum molestie felis ornare at. In imperdiet faucibus dapibus. Phasellus interdum, lectus a pretium sagittis, sapien sem auctor odio, eu efficitur augue elit rutrum nisl. -->
+
+<!-- ### Data Analysis  2 -->
+<!-- ------------ -->
+
+<!-- Aliquam sed volutpat nulla. Aliquam id dui orci. Aliquam pharetra fermentum diam vitae aliquam. Duis tellus leo, malesuada condimentum libero et, luctus molestie nulla. Morbi molestie tortor sem, interdum molestie felis ornare at. In imperdiet faucibus dapibus. Phasellus interdum, lectus a pretium sagittis, sapien sem auctor odio, eu efficitur augue elit rutrum nisl. Ut ut posuere urna. Donec sit amet diam eget ex lacinia commodo quis eu leo. -->
+
+
+
+
