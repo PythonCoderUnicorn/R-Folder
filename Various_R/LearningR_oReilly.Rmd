@@ -1,0 +1,210 @@
+---
+title: "LearningR_oReilly"
+output: html_document
+---
+
+
+
+
+# Learning R 
+# https://www.oreilly.com/library/view/learning-r/9781449357160/
+
+
+# Classes
+ All variables in R have a class, which tells you what kinds of variables they are. 
+ For example, most numbers have class numeric (see the next section for the other types), 
+ and logical values have class logical. Actually, being picky about it, vectors of numbers
+ are numeric and vectors of logical values are logical, since R has no scalar types. 
+ The “smallest” data type in R is a vector.
+ You can find out what the class of a variable is using class(my_variable):
+
+sequence integers
+seq.int(2,3, by=0.01)
+
+# sequence a vector 
+```{r}
+l = c("one","two","three","four")
+for(i in seq_along(l)) 
+  print(l[i])
+
+# print the length of vector
+print( length(l))
+```
+
+# vector length
+``length(1:5)``
+
+
+
+## Naming vector elements (like Python dict)
+```{r named vector elements}
+named.vector = c(apple=1,
+                 cherry=2,
+                 mango=8)
+
+named.vector
+```
+
+add to a named vector, need ``names()`` keyword
+```{r add to vector}
+x = 1:5
+names(x) = named.vector
+
+x
+```
+
+
+
+# Indexing Vectors
+
+```{r}
+
+v = c(1:5)**2
+v
+
+v[c(1,3,5)]
+
+
+v[v>6]
+```
+
+using the ``which.min`` and ``which.max``
+```{r}
+which.min(v)
+which.max(v)
+
+```
+
+
+Vector Recycling & Repetition 
+``1:5 +1`` is the same ``1+ 1:5``
+
+add 2 vectors together, concatenates
+1:5 + 1:15
+return error message when short + long vectors added
+
+equal length vectors are a must, use the  ``rep()`` function
+
+repeat 1:5 3 times
+``rep(1:5, 3)``
+
+``rep(1:5, each= 3)``
+
+``rep(1:5, times= 1:5)``
+
+``rep(1:5, length.out = 7)``
+
+faster to code
+``rep.int(1:5, 3)`` 
+
+``rep_len(1:5, 15)``
+
+# Matrices & Arrays
+```{r matrix}
+m = matrix(1:12,
+           nrow = 4,
+           dimnames = list(
+             c('one','two','three','four'), # rows
+             c('TNG','DS9','VOY') # columns
+           ))
+m
+```
+
+get the dimensions of matrix
+``dim(m)``
+number of rows
+``nrow(m)``
+
+# Matrix or Array indexing
+grab first row
+m[1,]
+grab first column
+m[,1]
+
+
+```{r}
+m2 = matrix(
+  seq.int(2,24, 2),
+  nrow = 4,
+  dimnames = list(
+    c('r1','r2','r3','r4'),
+    c('Engineering','Holodeck','Bridge')
+  )
+)
+m2
+```
+Transpose a matrix
+``t(m)``
+
+inner matrix multiplication
+``m %*% t(m) ``
+
+outer matrix multiplication
+``m %o% m``
+
+## Quiz
+```{r Quiz}
+# get vector that has 0,.25,.50,.75, 1
+seq(0,1, by= 0.25)
+
+named.vector
+
+```
+
+
+
+
+# Lists
+```{r}
+(a.list = list( c(33,78,99,45,35),
+                month.abb,
+                matrix( c(3,-8,1,-4), nrow = 2),
+                asin
+                )
+ )
+
+
+```
+
+
+# row, column, and dimension names
+```{r}
+rownames(m)
+colnames(m)
+dimnames(m)
+```
+
+# indexing arrays
+```{r}
+# 1st row, columns 2 and 3
+m[1, c("DS9", "VOY")]
+
+m[1,]
+
+```
+
+# combine matrices with cbind and rbind
+```{r}
+
+cbind(m, m2)
+
+rbind(m, m2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

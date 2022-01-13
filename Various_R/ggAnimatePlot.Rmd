@@ -1,0 +1,116 @@
+---
+title: "R GGAnimate Notebook"
+output: html_notebook
+---
+
+# Animate plots
+```{r}
+library(gganimate)
+library(ggplot2)
+library(dplyr)
+library(gapminder)
+library(ggthemes)
+```
+
+
+## the Gapminder data
+```{r}
+gapminder
+```
+
+
+## step 1 - base plot
+```{r}
+# base plot
+plot.1 = gapminder %>% 
+  ggplot( aes(x= gdpPercap,
+              y= lifeExp,
+              color= continent,
+              size= pop)) +
+  geom_point()
+
+
+plot.1
+```
+
+## step 2 - modify plot
+
+```{r}
+# modified plot
+
+library(extrafont)
+plot.1 = gapminder %>% 
+  ggplot( aes(x= gdpPercap,
+              y= lifeExp,
+              color= continent,
+              size= pop)) +
+  geom_point(alpha= 0.7, stroke=0) +
+  theme_fivethirtyeight() +
+  scale_size(range = c(2,12), guide = "none") +
+  scale_x_log10() +
+  labs( title = "Life Expectancy vs GDP by Country",
+        x="\nIncome per person (GDP/capital)",
+        y="Life Expectancy (yrs)",
+        color= "Continent",
+        caption = "Source: Gapminder") +
+  theme(axis.title = element_text(),
+        #text = element_text(family = "Rubik"),
+        legend.text =  element_text(size=11)) +
+  scale_color_brewer(palette = "Set2")
+
+plot.1.animation = plot.1 +
+  transition_time(year) +
+  labs(subtitle = "Year: {frame_time}")
+
+
+plot.1
+```
+
+
+## step 3 - animate
+```{r}
+
+plot.1.animation = plot.1 +
+  transition_time(year) +
+  labs(subtitle = "Year: {frame_time}")
+
+plot.1.animation
+```
+
+
+## step 4 - customize animation
+```{r}
+
+plot.1.animation = plot.1 +
+  transition_time(year) +
+  labs(subtitle = "Year: {frame_time}") +
+  shadow_wake(wake_length = 0.1)
+
+animate(plot.1.animation, height=500, width=800, fps=30, duration = 10,
+        end_pause = 60, res=100)
+
+plot.1.animation
+anim_save("gapminder-plot.gif")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

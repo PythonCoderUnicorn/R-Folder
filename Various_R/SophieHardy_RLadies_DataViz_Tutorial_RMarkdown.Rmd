@@ -1,0 +1,667 @@
+---
+title: "R Ladies Coventry: Data Visualisation Tutorial"
+author: "Sophie Hardy"
+date: "18 May 2021"
+output: 
+  html_document:
+    theme: united
+    highlight: haddock
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    number_sections: false
+    df_print: paged
+    self_contained: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{css, echo = FALSE}
+
+pre, code {white-space:pre !important; overflow-x:scroll !important}
+
+```
+
+```{r, include=FALSE}
+
+options(width=70)
+options(warn = -1)
+knitr::opts_chunk$set(echo=TRUE, tidy = TRUE, size="small", rows.print=20, dpi=300, comment = "")
+
+```
+
+\
+The aim of this Markdown file is to show you three ways to visualise your data that are better than bar plots. Method 1 = jitter plots; Method 2 = pirate plots; Method 3 = raincloud plots. You should then be able to take this script and apply it to your own data! 
+\
+\
+
+
+##Setup
+
+First, load in the required packages. 
+\
+NOTE: if you have NOT already installed the package, use this code first: install.packages("PackageName"). 
+\
+
+```{r, warning=FALSE, message=FALSE, results="hide"}
+library(ggplot2)      #for jitter plot and raincloud plot
+library(yarrr)        #for pirate plot
+library(tidyverse)    #for pipelines
+library(plotrix)      #for calculating standard-error
+library(knitr)        #for use in RMarkdown
+library(kableExtra)   #for use in RMarkdown
+library(here)         #for verifying folder location
+here::here()
+
+```
+
+
+\
+\
+
+
+##Jitter plots
+
+First, load in your dataset and check it looks as you expect. Here I am instead using simulated data with a categorical dependent variable (Correct: Yes vs. No).
+\
+
+```{r}
+Jdat = rbind( data.frame(pp = 1:15,
+                  group = "Child",
+                  condition = "A",
+                  correct = sample(c("Yes","No"), 300, replace=TRUE, prob = c(0.7,0.3)) ), 
+       data.frame(pp = 1:15,
+                  group = "Child",
+                  condition = "B",
+                  correct = sample(c("Yes","No"), 300, replace=TRUE, prob = c(0.5,0.5)) ),
+       data.frame(pp = 16:30,
+                  group = "Adult",
+                  condition = "A",
+                  correct = sample(c("Yes","No"), 300, replace=TRUE, prob = c(0.9,0.2)) ), 
+       data.frame(pp = 16:30,
+                  group = "Adult",
+                  condition = "B",
+                  correct = sample(c("Yes","No"), 300, replace=TRUE, prob = c(0.7,0.3)) ) )
+Jdat$resp = ifelse(Jdat$correct=="Yes", 1, 0)
+
+```
+
+\
+
+```{r}
+str(Jdat)   #check structure and variable names
+```
+
+\
+
+```{r results="hide", eval=FALSE}
+View(Jdat)    #opens pop-up of dataframe in new tab in R (doesn't apply to Rmarkdown output)
+head(Jdat)    #first few lines of datset
+```
+```{r, echo=FALSE}
+head(Jdat) %>%
+  kbl() %>%
+  kable_classic("hover", full_width = F, position="left", font_size = 20) %>%
+  row_spec(0, bold = T)
+```
+
+\
+
+```{r results="hide"}
+table(Jdat$group, Jdat$condition, Jdat$correct)  #check frequencies per group
+```
+```{r, echo=FALSE}
+df = data.frame(table(Jdat$group, Jdat$condition, Jdat$correct))
+colnames(df) = c("group", "condition", "correct", "frequency")
+
+
+df %>%
+  kbl() %>%
+  kable_classic("hover", full_width = F, position="left", font_size = 18) %>%
+  row_spec(0, bold = T)
+```
+
+\
+\
+
+Then create a new dataframe of your summary stats. This is useful for checking your data AND we will need to use the new summary dataframe for the data plot.
+\
+```{r results="hide"}
+#using a tidyverse pipeline
+summ = Jdat %>% 
+  group_by(group, condition) %>%
+  summarise(mean=mean(resp),
+            sd=sd(resp), se=std.error(resp))
+summ
+```
+```{r, echo=FALSE}
+summ %>%
+  kbl(digits = c(2, 3, 2)) %>%
+  kable_classic("hover", full_width = F, position="left", font_size = 18) %>%
+  add_header_above(c(" " = 2, "Proportion Correct" = 3)) %>%
+  row_spec(0, bold = T) 
+```
+
+
+\
+\
+
+***Making a jitter plot (and any ggplot really) is all about adding layers!***
+
+\
+
+
+<font size="4.5"> **LAYER 1: BASIC BAR PLOT** </font>
+\
+At this first stage, one of the most important things to pay attention to is that you are correctly specifying your variable in the aes (short for aesthetic mappings). 
+Note: surrounding brackets mean the code output will be printed.
+\
+
+```{r Fig1, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( J1 = ggplot(data=summ, aes(x=condition, fill=condition, y=mean)) +   #selecting your dataframe and specifying variables
+    facet_grid(.~group) +      #grid groups by age group
+    geom_bar(stat="identity") ) #stat=indentify signals to map the y value to the bar height   
+
+```
+
+\
+\
+
+ <font size="4.5"> **LAYER 2: ADD SE BARS** </font>
+\
+You also do this with standard deviation or confidence internals.
+\
+```{r Fig2, fig.width = 5, fig.asp = .6, fig.align = "center"}
+#specify the min and max limits of your errors bars (this relates to variables in the summ dataframe)
+limits = aes(ymax=mean+se, ymin=mean-se)
+
+#add this new errorbar layer to the first plot
+(J2 = J1 + geom_errorbar(limits, 
+                         size=0.5, width=0.2 ) )    #specify size (thickness) and width of bars
+```
+
+\
+\
+
+ <font size="4.5"> **LAYER 3: ADD THE INDIVIDUAL DATA POINTS** </font>
+\
+For this, you first need to create a new dataframe of each participant's individual average per condition. This is exactly the same as previous pipeline used to create the summ dataframe, except this time we also group by participant (pp).
+\
+```{r results="hide"}
+indiv = Jdat %>% 
+  group_by(group, condition, pp) %>%
+  summarise(mean=mean(resp),
+            sd=sd(resp))
+head(indiv)
+```
+```{r, echo=FALSE}
+head(indiv) %>%
+  kbl(digits = 2) %>%
+  kable_classic("hover", full_width = F, position="left", font_size = 18) %>%
+  add_header_above(c(" " = 3, "Proportion Correct" = 2)) %>%
+  row_spec(0, bold = T) 
+```
+\
+\
+
+
+One of the most important thing for this layer is specifying how far from the centre line you want the individual data points to be - **the position_dodge**. This basically refers to how spread you want the data points to be around the bar. If you have 0 dodge width, the raw data points will all be in the same horizontal space and will overlap (thereby obstructing each other!).
+\
+\
+The other important thing is to specify in the aes that for this new layer you want to **use a new dataframe** (indiv) to the previous layers (which used summ). **Grouping by pp** is also new some must be specified - this means that R treats each participant's data individually, which is very important for the next step when we want to add in the individual participant effects (i.e., join the dots).
+
+\
+```{r Fig3, fig.width = 5, fig.asp = .6, fig.align = "center"}
+#specify the dodge width
+pd = position_dodge(0.3)
+
+#add this new layer
+(J3 = J2 + geom_point(data=indiv, aes(group=pp),   #specify new dataframe (indiv) and use of pp as group
+                      size=0.5,  shape=19, #specify size and shape of point
+                      position=pd) )  #dodge width around the centre line
+```
+
+\
+\
+
+ <font size="4.5"> **LAYER 4: ADD PARTICIPANT INDIVIDUAL EFFECTS** </font>
+\
+This steps connect participants' individual data points using geom_line. It is important to use the same position dodge as before (otherwise the dots and lines won't connect).
+\
+```{r Fig4, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( J4 = J3 + geom_line(data=indiv, aes(group = pp),   #specify different dataframe again (because original plot used summ dataframe)
+                      size=0.2,   #specify line size   
+                      position=pd) )  #same dodge width as before (pd)
+```
+
+
+\
+\
+
+ <font size="4.5"> **FINAL STEPS: MAKE IT PRETTY!** </font>
+\
+You can change the colour of the bars.
+\
+```{r Fig5, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( J5 = J4 + scale_fill_manual(values=c("mediumpurple1", "springgreen1")) )
+```
+\
+\
+You can change the axis and legend labels.
+\
+```{r Fig6, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( J6 = J5 + labs(x="Experimental Condition", y="Proportion Correct Responses") +
+    scale_y_continuous(limits = c(0, 1)) +
+    theme(legend.position = "none") )   #get rid of legend as it just repeats x axis info in this case
+```
+\
+\
+You change the background theme.
+\
+```{r Fig7, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( J7 = J6 + theme_bw() + 
+    theme(panel.grid.major = element_blank(),   #make figure background white
+          panel.grid.minor = element_blank(),
+          strip.text = element_text(size=10), 
+          strip.background = element_rect(fill="white", size=0.5),   #make facet labels white
+          strip.text.x = element_text(face="bold"),  #make facet label bold
+          panel.border = element_rect(colour = "black", size=0.5),  
+          legend.position = "none",
+          axis.text.x=element_text(size=10, colour="black"),   #set x axis tick size
+          axis.text.y=element_text(colour="black"))  )
+```
+
+\
+\
+
+ <font size="4.5"> **ALL IN ONE** </font>
+\
+You can do all these layers in one big set of code if you like, BUT just be careful though as it's harder to spot mistakes this way!
+\
+```{r Fig8, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( JPlot = ggplot(data=summ, aes(x=condition, fill=condition, y=mean)) +
+    facet_grid(.~group) + 
+    geom_bar(stat="identity") +
+    geom_errorbar(limits, position=pd, width=0.2, size=0.5) + 
+    geom_point(data=indiv, aes(group = pp), size=0.5, shape=19,  position=pd) +
+    geom_line(data=indiv, aes(group = pp), size=0.2, position=pd) +
+    scale_fill_manual(values=c("mediumpurple1", "springgreen1")) +
+    labs(x="Experimental Condition", y="Proportion Correct Responses") + 
+    scale_y_continuous(limits = c(0, 1)) +
+    theme_bw() + 
+    theme(panel.grid.major = element_blank(),  
+          panel.grid.minor = element_blank(),
+          strip.text = element_text(size=10), 
+          strip.background = element_rect(fill="white", size=0.5),   
+          strip.text.x = element_text(face="bold"),  
+          panel.border = element_rect(colour = "black", size=0.5),  
+          legend.position = "none",
+          axis.text.x=element_text(size=10, colour="black"), 
+          axis.text.y=element_text(colour="black")) )
+
+```
+
+
+\
+\
+
+
+##Pirate plots
+
+First, load in your dataset and check it looks as you expect. Here I am instead using simulated data with a continuous dependent variable (reaction times [RT]).
+\
+
+```{r}
+set.seed(123)
+Pdat = rbind( data.frame(pp = 1:15,
+                         group = "Child",
+                         condition = "A",
+                         RT = rnorm(n = 300, mean = 230, sd = 60) ), 
+              data.frame(pp = 1:15,
+                         group = "Child",
+                         condition = "B",
+                         RT = rnorm(n = 300, mean = 195, sd = 65) ),
+              data.frame(pp = 16:30,
+                         group = "Adult",
+                         condition = "A",
+                         RT = rnorm(n = 300, mean = 150, sd = 45) ), 
+              data.frame(pp = 16:30,
+                         group = "Adult",
+                         condition = "B",
+                         RT = rnorm(n = 300, mean = 145, sd = 50) ) )
+```
+
+
+\
+
+```{r}
+str(Pdat) 
+```
+
+\
+
+```{r results="hide", eval=FALSE}
+View(Pdat)
+head(Pdat)  
+```
+```{r, echo=FALSE}
+head(Pdat) %>%
+  kbl(digits = 1) %>%
+  kable_classic("hover", full_width = F, position="left", font_size = 20) %>%
+  row_spec(0, bold = T)
+```
+
+\
+Then create a new dataframe of your summary stats (to check everything is okay). Also calculated the median central tendency measure because this is a continuous variable.
+\
+```{r results="hide"}
+( summ = Pdat %>% 
+    group_by(group, condition) %>%
+    summarise(mean=mean(RT), median=median(RT),
+              sd=sd(RT), se=std.error(RT)) )
+```
+```{r, echo=FALSE}
+summ %>%
+  kbl(digits = 1) %>%
+  kable_classic("hover", full_width = F, position="left", font_size = 18) %>%
+  add_header_above(c(" " = 2, "Reaction time" = 4)) %>%
+  row_spec(0, bold = T) 
+```
+
+\
+\
+
+
+***Making a basic pirate plot is very straightforward, but if you want to make it include more things / look different you need to add a bit more. You don't add layers (like in ggplot), but instead add lines of code.***
+
+
+\
+
+
+<font size="4.5"> **BASIC PLOT** </font>
+\
+The most important things is to specify the 'formula' of your plot: **Formula = DV ~ IV1 + IV2 + IV3** (max 3).
+\
+Pirateplot has three different themes that you can play about with.
+\
+
+```{r Fig9, fig.asp = 0.8, fig.align = "center"}
+pirateplot(formula = RT ~ condition + group,
+           data = Pdat,
+           theme = 2) 
+
+```
+
+\
+\
+
+<font size="4.5"> **CHANGE COLOUR PALETTE** </font>
+\
+Lots of options available here - just check out the website (see resources at bottom of file). You can also custom your colours if you prefer. Additionally, you can remove the gridlines.
+\
+
+```{r Fig10, fig.asp = 0.8, fig.align = "center"}
+pirateplot( formula = RT ~ condition + group,
+            data = Pdat,
+            theme = 2,
+            pal = "espresso",  #colour palette
+            gl.lty = 0 ) #set opacity of gridlines to 0
+
+```
+
+\
+\
+
+
+<font size="4.5"> **CHANGE THE PROPERTIES OF THE DIFFERENT ELEMENTS** </font>
+\
+For each feature (central line, inference bands, bean spread, raw data points), you can change:
+
+* the density/opaqueness (.o)
+* the colour (.col)
+* the size (.lwd)
+
+\
+
+```{r Fig12, fig.asp = 0.8, fig.align = "center"}
+pirateplot( formula = RT ~ condition + group,
+            data = Pdat,
+            theme = 2,
+            pal = "espresso",
+            gl.lty = 0, 
+            avg.line.lwd = 2.5,   #central line properties
+            inf.f.o = 0.9,        #inference band properties
+            bean.f.col = "grey", bean.f.o = 0.2,  #bean properties 
+            point.col = "black", point.o = 0.4, point.lwd = 1) #raw point properties
+            
+
+```
+
+\
+\
+
+<font size="4.5"> **CHANGE LABELS** </font>
+\
+
+```{r Fig13, fig.asp = 0.8, fig.align = "center"}
+pirateplot( formula = RT ~ condition + group,
+            data = Pdat,
+            theme = 2,
+            pal = "espresso",
+            gl.lty = 0, 
+            avg.line.lwd = 2.5, 
+            inf.f.o = 0.9,
+            bean.f.col = "grey", bean.f.o = 0.2,
+            point.col = "black", point.o = 0.4, point.lwd = 1,
+            ylab = "Reaction times (ms)",   #axis label
+            main = "My pretty plot")   #main title
+
+
+```
+
+\
+\
+
+<font size="4.5"> **ADD UPPER/LOWER QUARTILES** </font>
+\
+
+```{r Fig14, fig.asp = 0.8, fig.align = "center"}
+pirateplot( formula = RT ~ condition + group,
+            data = Pdat,
+            theme = 2,
+            pal = "espresso",
+            gl.lty = 0, 
+            bean.f.col = "grey", bean.f.o = 0.2,
+            point.col = "green", point.o = 0.4, point.lwd = 1,
+            ylab = "Reaction times (ms)",
+            main = "Quartiles", 
+            quant = c(.1, .9), quant.col = "black") #Black quantile lines
+
+
+```
+
+\
+\
+
+
+##Raincloud plots
+
+First, load in your dataset and check it looks as you expect. Here I am using the same continuous dataset that I simulated above.
+\
+
+
+For raincloud plots, you need to install a package of functions from GitHub [(downloadable here)](https://github.com/RainCloudPlots/RainCloudPlots), NOT the R repository.
+\
+I have provided the package functions in the project folder - use 'source' to access.
+\
+```{r}
+Rdat = Pdat  
+
+source("R_rainclouds.R")
+```
+
+\
+\
+
+***Just like jitter plots, raincloud plots are very much about assembling the layers.***
+
+\
+
+
+<font size="4.5"> **LAYER 1: VIOLIN DISTRIBUTIONS** </font>
+\
+Note: it is the geom_flat_violin function that is specific to the raincloud GitHub package. All other functions that are used (facet_wrap, grom_point etc.) are from the general ggplot2 package.
+\
+
+```{r Fig15, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( R1 = ggplot(Rdat,aes(x=condition, y=RT, fill = condition, colour = condition)) +  #setting up variables
+    facet_wrap(~group,  strip.position = 'top') +   #adding facet grid
+    geom_flat_violin(position = position_nudge(x = .25, y = 0),
+                     adjust =2, trim = TRUE, alpha = 0.3) )  #adding half-violin 
+
+```
+
+\
+\
+
+<font size="4.5"> **LAYER 2: RAW DATA POINTS** </font>
+\
+
+
+```{r Fig16, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( R2 = R1 +  geom_point(position = position_jitter(width = .15), 
+                        size = 0.5) )    #points are jittered to stop them obstrucing each other
+
+```
+
+\
+\
+
+<font size="4.5"> **LAYER 3: BOX PLOTS** </font>
+\
+The thing to be aware of here is that you need to slightly offset the position ofboxplot from the condition centre line so that it lines up with the half-violin (which is already set to be slightly to the right by the geom_half_violin function).
+\
+
+```{r Fig17, fig.width = 5, fig.asp = .6, fig.align = "center"}
+(R3 = R2 + geom_boxplot(aes(x = as.numeric(as.factor(condition))+0.25, y = RT),   #move boxplot position to line up with half-violin
+                        outlier.shape = NA, width = .15, colour = "BLACK") )
+
+```
+
+\
+\
+
+<font size="4.5"> **FINAL STEP: MAKE IT PRETTY!** </font>
+\
+You can change the colour of the bars and change the axis/legend labels.
+\
+
+```{r Fig18, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( R4 = R3 +  scale_fill_manual(values=c("red", "blue")) +  #change colour palette
+    labs(x="Experimental Condition", y="Reaction time (ms)") +
+    theme(legend.position = "none") )   
+
+```
+
+\
+\
+
+You can change the background theme.
+
+```{r Fig19, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( R5 = R4 + theme_classic() +
+  theme(axis.title.y.right = element_blank(),                # hide right axis title
+        axis.text.y.right = element_blank(),                 # hide right axis labels
+        axis.ticks.y = element_blank(),                      # hide left/right axis ticks
+        axis.text.y = element_text(margin = margin(r = 0)),  # move left axis labels closer to axis
+        panel.spacing = unit(0, "mm"),                       # remove spacing between facets
+        strip.background = element_rect(size = 0.5),         # match default line size of theme_classic
+        strip.text.x = element_text(face="bold"),            # make facet label bold
+        axis.text.x=element_text(colour="black"),            # make x axis text bold
+        axis.text.y.left=element_text(colour="black"),       # make y axis text bold
+        legend.position = "none" )  )    
+
+
+```
+
+\
+\
+
+<font size="4.5"> **ALL IN ONE** </font>
+
+
+```{r Fig20, fig.width = 5, fig.asp = .6, fig.align = "center"}
+( Rplot = ggplot(Rdat,aes(x=condition, y=RT, fill = condition, colour = condition))+
+    facet_wrap(~group, strip.position = 'top') +
+    geom_flat_violin(position = position_nudge(x = .25, y = 0),adjust =2, trim = TRUE, alpha = 0.3)+
+    geom_point(position = position_jitter(width = .15), size = 0.5)+
+    geom_boxplot(aes(x = as.numeric(as.factor(condition))+0.25, y = RT),
+                 outlier.shape = NA, width = .15, colour = "BLACK") +
+    scale_fill_manual(values=c("red", "blue")) +
+    labs(y="Reaction times (ms)", x = "Experimental Condition") +
+    theme_classic() +
+    theme(axis.title.y.right = element_blank(),                
+          axis.text.y.right = element_blank(),                 
+          axis.ticks.y = element_blank(),                      
+          axis.text.y = element_text(margin = margin(r = 0)),  
+          panel.spacing = unit(0, "mm"),                       
+          strip.background = element_rect(size = 0.5),         
+          strip.text.x = element_text(face="bold"),            
+          axis.text.x=element_text(colour="black"),            
+          axis.text.y.left=element_text(colour="black"),       
+          legend.position = "none" ) ) 
+
+
+```
+
+\
+\
+\
+
+
+##Additional resources
+\
+**General ggplot tips**
+\
+[ggplot2 cheat sheet](https://github.com/rstudio/cheatsheets/blob/master/data-visualization-2.1.pdf) 
+\
+[ggplot2 tutorial by Selva Prabhakaran](http://r-statistics.co/ggplot2-Tutorial-With-R.html) 
+\
+\
+
+**Pirate plots**
+\
+[Tutorial by Nathaniels Phillips](https://bookdown.org/ndphillips/YaRrr/pirateplot.html), the creator of the yarrr package
+\
+[Tutorial by Sara Weston and Debbie Yee](https://dmyee.files.wordpress.com/2016/03/pirateplots_workshop.pdf)
+\
+\
+
+**Raincloud plots**
+\
+[Tutorial and accompaining paper by Micah Allen and collegues](https://wellcomeopenresearch.org/articles/4-63), who created the raincloud plot - this tutorial also contains code for howto  create raincloud plots in Python and MATLAB
+\
+[Brief tutorial by David Zhoa about trouble-shooting errors in raincloud plots](https://towardsdatascience.com/the-ultimate-eda-visualization-in-r-e6aff6afe5c1)
+\
+\
+
+
+
+**General RMarkdown tips**
+\
+[R Markdown Cookbook by Yihui Xie and collegues](https://bookdown.org/yihui/rmarkdown-cookbook/) - this is the online version of the published book
+\
+[Tutoral on using KableExtra to make tables in R Markdown by Hao Zhu](https://haozhu233.github.io/kableExtra/awesome_table_in_html.html)
+\
+\
+
+**You can always contact me!!**
+\
+All contact details are available on [my website](https://sophiehardy.co.uk/)
+
+\
+<font size="4.5"> ***Happy plotting!***
+
+\
+
+ <font size="3">[Back to top of document](#)

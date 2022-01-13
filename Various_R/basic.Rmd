@@ -1,0 +1,73 @@
+---
+title: "**R Notebook**"
+output: 
+  html_notebook: 
+    toc: yes
+    css: R.css
+---
+
+# A Header 
+This is the text underneath a header 
+
+<p>
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+</p>
+
+this plot 
+
+- cars dataset 
+```{r echo=TRUE}
+plot(cars)
+```
+
+<p>
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+## this is an other line!
+</p>
+
+```{r echo=FALSE}
+ggplot(diamonds) +
+ aes(x = color, y = price, fill = color) +
+ geom_boxplot() +
+ scale_fill_viridis_d(option = "magma") +
+ labs(title = "Diamonds Data", subtitle = "Price vs Colour") 
+
++
+ theme_minimal() + 
+  
+  theme(panel.grid.major = element_line(colour = "honeydew4", 
+    linetype = "dotted"), panel.grid.minor = element_line(linetype = "blank"), 
+    panel.background = element_rect(fill = "black", 
+        linetype = "solid"), plot.background = element_rect(colour = "aquamarine4", 
+        size = 1, linetype = "solid")) + 
+  
+  theme(panel.grid.minor = element_line(colour = "gray97"), 
+        
+    axis.title = element_text(size = 15, 
+                              
+        colour = "cadetblue1"), plot.title = element_text(size = 15, 
+        colour = "cadetblue1", hjust = 0.5), 
+    
+    legend.text = element_text(colour = "azure"), 
+    legend.title = element_text(colour = "azure"), 
+    
+    panel.background = element_rect(colour = "white"), 
+    plot.background = element_rect(fill = "black", 
+        colour = "aquamarine2"), legend.key = element_rect(fill = NA, 
+        colour = "white"), legend.background = element_rect(fill = "gray0", 
+        colour = "white", linetype = "solid"))
+```
+
+
+
+
+

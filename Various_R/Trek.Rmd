@@ -1,0 +1,206 @@
+---
+title: "R Trek Notebook"
+output: html_notebook
+---
+
+# Star Trek **rtrek** package
+
+```{r}
+library(rtrek)
+library(tidyverse)
+```
+
+Star Trek API (STAPI) dataframe 
+
+```{r}
+# stapiEntities
+
+
+
+df = as.data.frame(stapiEntities)
+df
+# view(stapiEntities)
+```
+
+
+
+```{r}
+# df = stapi("spacecraft", page= 1:12)
+# df.species = stapi("species")
+df.char = stapi("character", page = 1)
+```
+
+
+count the names of ships from the spacecraft data
+```{r}
+df_summary = df %>% 
+  count(name)
+
+
+# get only Enterprise ships
+# filter(df, name =="USS Enterprise") %>% 
+  # view(.)
+
+USS.ENT = filter(df, name =="USS Enterprise") 
+
+# install.packages("DT")
+DT::datatable(USS.ENT)
+```
+
+
+
+```{r}
+# df.spaceclass = purrr::map_df(1:6, ~(
+#   message(glue::glue("importing page {.x}"))
+#   stapi("spacecraftClass", page=.x)
+# ))
+  
+df.spaceclass = stapi("spacecraftClass", page= 1)
+
+```
+
+
+```{r}
+
+valid.USS = USS.ENT %>% 
+  filter(is.na(status)) %>% 
+  pull(spacecraftClass.uid)
+
+
+
+df.spacesub = df.spaceclass %>% 
+  filter(uid %in% valid.USS)
+```
+
+
+```{r}
+
+ggplot(df.spaceclass, aes(x= numberOfDecks, fill= 'green') ) +
+  geom_histogram()
+
+```
+
+
+
+
+
+```{r}
+
+names(df.species)
+
+
+# 
+# ggplot(data = df.species, aes(x= warpCapableSpecies, fill= warpCapableSpecies)) +
+#   geom_bar() +
+#   facet_grid(quadrant.name ~ .)
+
+
+ggplot(data = df.species, aes(x= warpCapableSpecies, fill= warpCapableSpecies)) +
+  geom_bar() +
+  facet_grid(. ~ quadrant.name)
+```
+
+
+
+```{r trekfont}
+# install.packages("trekfont")
+library(showtext)
+font <- c("Khan", "StarNext", "FederationDS9Title", "Federation", "Klingon", "ModernVulcan", "TNGcast", "FederationStarfleet")
+path <- system.file(paste0("fonts/", font, ".ttf"), package = "trekfont")
+for(i in seq_along(font)) font_add(font[i], path[i])
+font_families()
+showtext_auto()
+
+```
+
+```{r}
+y <- seq(0.1, 0.9, length.out = 7)
+txt <- "The Quick Brown Fox Jumps Over The Lazy Dog"
+plot(0, 0, type = "n", ylim = c(0, 1), main = "trekfont package font sample", family = font[8])
+for(i in 1:7) text(0, y[i], txt, family = font[i])
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+library(rtrek)
+library(dplyr)
+
+
+stapi("character", page = 1) %>% select(uid, name)
+
+
+```
+
+get Q
+```{r}
+Q <- "CHMA0000025118" #unique ID
+Q <- stapi("character", uid = Q)
+Q$episodes %>% select(uid, title, stardateFrom, stardateTo)
+
+```
+
+
+
+```{r}
+
+ggplot(diamonds, aes(carat, stat(count), fill = cut)) +
+  geom_density(position = "fill") + scale_fill_lcars("2357")
+
+
+
+ggplot(diamonds, aes(carat, stat(count), fill = cut)) +
+  geom_area(position = "fill") + 
+  scale_fill_lcars("2357")
+```
+
+
+
+```{r}
+lcarsApp("demo")
+
+lcarsApp("box")
+lcarsApp("sweep")
+lcarsApp("toggle")
+lcarsApp("elements")
+lcarsApp("leaflet")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,126 @@
+---
+title: "General R Notebook"
+output: 
+  html_notebook: 
+    toc: yes
+    theme: flatly
+---
+
+# import libraries
+
+```{r}
+library(plotly)
+library(dplyr)
+library(readr)
+library(tidyverse)
+```
+
+```{r}
+url = 'https://raw.githubusercontent.com/hadley/tidy-data/master/data/billboard.csv'
+
+billbrd <- readr::read_csv(url)
+head(billbrd)
+```
+
+
+piping and using a .
+```{r}
+10 %>% head(billbrd, .)
+```
+
+
+# Dplyr functions
+
+## column
+- ``select()``
+- ``mutate()``
+
+## row
+- ``filter()``
+- ``distinct()``
+- ``arrange()``
+
+## group
+- ``groupby()``
+- ``summarise()``
+- ``count()``
+
+
+
+# select
+Use the select function to grab certain columns from data frame
+```{r select}
+# select function
+billbrd.2 = billbrd %>% 
+  select( artist.inverted, track, date.peaked, time, genre )
+
+# rename column, use shorthand : to grab columns
+billbrd.2 = billbrd %>% 
+  select( artist = artist.inverted, artist.inverted: genre )
+```
+
+
+# Mutate
+```{r mutate}
+```
+
+# filter
+```{r filter}
+billbrd.2 %>% 
+  select( artist: genre ) %>% 
+  filter(time > 4:00:00 & genre=='Rap')
+```
+
+
+# distinct
+```{r distinct}
+billbrd.2 %>% 
+  select( artist: genre ) %>% 
+  filter(time > 4:00:00 & genre=='Latin') %>% 
+  distinct(artist)
+```
+
+
+# groupby
+```{r groupby}
+billbrd.2 %>% 
+  select( artist, track, time, genre ) %>% 
+  filter(genre=='Rock') %>% 
+  group_by(track) %>% 
+  summarise(max(time)) 
+
+
+```
+
+
+
+
+```{r count}
+billbrd.2 %>% 
+  select( artist: genre ) %>% 
+  count(artist) %>% arrange(desc(n))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
